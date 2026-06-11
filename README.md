@@ -29,7 +29,6 @@ free database at neon.tech and copy the pooled connection string.)
 Create the tables once, from any machine:
 
 ```bash
-cd rfp-comms
 npm install
 DATABASE_URL="postgresql://…" npx prisma db push
 ```
@@ -63,8 +62,8 @@ This is what lets the app sign you in and send mail as you. In the
 
 ### 3. Deploy to Vercel
 
-Import this repo in Vercel with **Root Directory = `rfp-comms`**, then set the
-environment variables (see `.env.example`):
+Import this repo in Vercel — the app lives at the repo root, so no Root Directory
+setting is needed. Then set the environment variables (see `.env.example`):
 
 | Variable | Value |
 | --- | --- |
@@ -81,7 +80,6 @@ Adding a colleague later = adding their email to `ALLOWED_EMAILS`.
 ### Local development
 
 ```bash
-cd rfp-comms
 cp .env.example .env   # fill in values; uncomment AUTH_URL
 npm install
 npm run db:push        # once
