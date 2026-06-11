@@ -1,0 +1,32 @@
+{
+  "name": "rfp-comms",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pre-RFP supplier communication manager — multi-client email campaigns via Microsoft 365",
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "postinstall": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.5.0",
+    "@tiptap/pm": "^3.0.0",
+    "@tiptap/react": "^3.0.0",
+    "@tiptap/starter-kit": "^3.0.0",
+    "next": "^15.3.0",
+    "next-auth": "5.0.0-beta.29",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prisma": "^6.5.0",
+    "typescript": "^5.7.0"
+  }
+}

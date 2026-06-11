@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Client {
+  id         String    @id @default(cuid())
+  name       String
+  engagement String    @default("")
+  notes      String    @default("")
+  status     String    @default("SETUP") // SETUP | IN_PROGRESS | COMPLETE
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  audiences  Audience[]
+  contacts   Contact[]
+  sendLogs   SendLog[]
+}
+
+model Audience {
+  id             String    @id @default(cuid())
+  clientId       String
+  client         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  key            String // "A" | "B"
+  label          String
+  targetSendDate String    @default("") // YYYY-MM-DD, date-only to avoid TZ drift
+  bccEmails      String    @default("") // comma-separated, optional record-keeping BCC
+  template       Template?
+  contacts       Contact[]
+  sendLogs       SendLog[]
+
+  @@unique([clientId, key])
+}
+
+model Contact {
+  id            String    @id @default(cuid())
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  audienceId    String?
+  audience      Audience? @relation(fields: [audienceId], references: [id], onDelete: SetNull)
+  company       String    @default("")
+  firstName     String    @default("")
+  lastName      String    @default("")
+  email         String
+  title         String    @default("")
+  category      String    @default("")
+  notes         String    @default("")
+  emailValid    Boolean   @default(true)
+  // Set when this record was explicitly duplicated from another contact so one
+  // supplier can receive both communications. Duplicates are ignored by
+  // re-import matching (the primary record wins).
+  duplicateOfId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sendLogs      SendLog[]
+
+  @@index([clientId, email])
+}
+
+model Template {
+  id                    String       @id @default(cuid())
+  audienceId            String       @unique
+  audience              Audience     @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+  subject               String       @default("")
+  bodyHtml              String       @default("")
+  version               Int          @default(1)
+  noAttachmentConfirmed Boolean      @default(false)
+  updatedAt             DateTime     @updatedAt
+  attachments           Attachment[]
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  templateId String
+  template   Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  fileName   String
+  mimeType   String
+  size       Int
+  data       Bytes
+  createdAt  DateTime @default(now())
+}
+
+model SendLog {
+  id              String   @id @default(cuid())
+  clientId        String
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  contactId       String?
+  contact         Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  audienceId      String?
+  audience        Audience? @relation(fields: [audienceId], references: [id], onDelete: SetNull)
+  toEmail         String
+  contactName     String   @default("")
+  audienceLabel   String   @default("")
+  subject         String   @default("")
+  templateVersion Int      @default(1)
+  status          String // SENT | FAILED
+  isTest          Boolean  @default(false)
+  error           String   @default("")
+  sentAt          DateTime @default(now())
+
+  @@index([clientId, sentAt])
+}
