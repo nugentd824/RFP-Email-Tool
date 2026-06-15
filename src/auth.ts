@@ -59,6 +59,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       console.error(
         "[auth] error:", error.name, "-", error.message, cause ?? "",
         "| AUTH_SECRET present:", !!process.env.AUTH_SECRET,
+        "| ISSUER:", JSON.stringify(process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER),
+        "| CLIENT_ID len:", (process.env.AUTH_MICROSOFT_ENTRA_ID_ID ?? "").length,
+        "| CLIENT_SECRET len:", (process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET ?? "").length,
         "| AUTH_* keys:", authKeys,
       );
     },
