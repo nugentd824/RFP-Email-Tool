@@ -4,6 +4,15 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 
 const SCOPES = "openid profile email offline_access User.Read Mail.Send";
 
+// TEMP diagnostic: prints which AUTH_* env keys the runtime sees (names only,
+// never values) so we can confirm AUTH_SECRET is present and correctly scoped.
+console.log(
+  "[auth] env probe — AUTH_SECRET present:",
+  !!process.env.AUTH_SECRET,
+  "| AUTH_* keys:",
+  Object.keys(process.env).filter((k) => /^(AUTH_|NEXTAUTH_)/i.test(k)),
+);
+
 function tenantTokenEndpoint(): string {
   // AUTH_MICROSOFT_ENTRA_ID_ISSUER looks like https://login.microsoftonline.com/<tenant>/v2.0
   const issuer = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER ?? "";
