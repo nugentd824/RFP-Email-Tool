@@ -48,6 +48,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/signin" },
+  logger: {
+    // Surface the underlying cause of the generic "Configuration" error page
+    // in the Vercel function logs (name + message + nested cause).
+    error(error) {
+      const cause = (error as { cause?: unknown }).cause;
+      console.error("[auth] error:", error.name, "-", error.message, cause ?? "");
+    },
+  },
   providers: [
     MicrosoftEntraID({
       clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
