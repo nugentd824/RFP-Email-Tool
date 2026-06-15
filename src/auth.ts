@@ -4,15 +4,6 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 
 const SCOPES = "openid profile email offline_access User.Read Mail.Send";
 
-// TEMP diagnostic: prints which AUTH_* env keys the runtime sees (names only,
-// never values) so we can confirm AUTH_SECRET is present and correctly scoped.
-console.log(
-  "[auth] env probe — AUTH_SECRET present:",
-  !!process.env.AUTH_SECRET,
-  "| AUTH_* keys:",
-  Object.keys(process.env).filter((k) => /^(AUTH_|NEXTAUTH_)/i.test(k)),
-);
-
 function tenantTokenEndpoint(): string {
   // AUTH_MICROSOFT_ENTRA_ID_ISSUER looks like https://login.microsoftonline.com/<tenant>/v2.0
   const issuer = process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER ?? "";
@@ -62,7 +53,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // in the Vercel function logs (name + message + nested cause).
     error(error) {
       const cause = (error as { cause?: unknown }).cause;
-      console.error("[auth] error:", error.name, "-", error.message, cause ?? "");
+      // TEMP: include the env probe (names only, never values) on every error
+      // so it always lines up with the failing request, warm starts included.
+      const authKeys = Object.keys(process.env).filter((k) => /^(AUTH_|NEXTAUTH_)/i.test(k));
+      console.error(
+        "[auth] error:", error.name, "-", error.message, cause ?? "",
+        "| AUTH_SECRET present:", !!process.env.AUTH_SECRET,
+        "| AUTH_* keys:", authKeys,
+      );
     },
   },
   providers: [
