@@ -48,38 +48,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/signin" },
-  logger: {
-    // Surface the underlying cause of the generic "Configuration" error page
-    // in the Vercel function logs (name + message + nested cause).
-    error(error) {
-      // TEMP: walk the cause/body chain so the underlying provider error
-      // (e.g. an AADSTS code from the token endpoint) is visible, plus the
-      // env probe. Names only for env, never values.
-      const safe = (v: unknown) => {
-        try {
-          return typeof v === "string" ? v : JSON.stringify(v);
-        } catch {
-          return String(v);
-        }
-      };
-      const describe = (e: unknown, depth = 0): string => {
-        if (e == null || depth > 5) return "";
-        const o = e as { name?: string; message?: string; cause?: unknown; body?: unknown; error?: unknown };
-        const head = e instanceof Error ? `${o.name}: ${o.message}` : safe(e);
-        const inner = describe(o.cause ?? o.body ?? o.error, depth + 1);
-        return inner ? `${head} <= ${inner}` : head;
-      };
-      const authKeys = Object.keys(process.env).filter((k) => /^(AUTH_|NEXTAUTH_)/i.test(k));
-      console.error(
-        "[auth] error:", describe(error).slice(0, 1200),
-        "| AUTH_SECRET present:", !!process.env.AUTH_SECRET,
-        "| ISSUER:", JSON.stringify(process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER),
-        "| CLIENT_ID len:", (process.env.AUTH_MICROSOFT_ENTRA_ID_ID ?? "").length,
-        "| CLIENT_SECRET len:", (process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET ?? "").length,
-        "| AUTH_* keys:", authKeys,
-      );
-    },
-  },
   providers: [
     MicrosoftEntraID({
       clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
@@ -101,10 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         .map((e) => e.toLowerCase());
       // Default-deny: an empty allow-list locks everyone out rather than
       // exposing client supplier data on a public URL.
-      const permitted = allowed.length > 0 && candidates.some((c) => allowed.includes(c));
-      // TEMP: diagnose AccessDenied — which identity claims came back vs the list.
-      console.error("[auth] signIn — candidates:", candidates, "| allowed:", allowed, "| permitted:", permitted);
-      return permitted;
+      return allowed.length > 0 && candidates.some((c) => allowed.includes(c));
     },
     authorized({ auth }) {
       return !!auth?.user;
