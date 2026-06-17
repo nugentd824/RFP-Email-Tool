@@ -48,6 +48,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/signin" },
+  logger: {
+    // Auth.js renders a generic error page and otherwise swallows the cause.
+    // Log it (name, message, nested cause) so auth issues are diagnosable from
+    // the function logs. No secrets or environment values are logged.
+    error(error) {
+      const cause = (error as { cause?: unknown }).cause;
+      console.error(`[auth] ${error.name}: ${error.message}`, cause ?? "");
+    },
+  },
   providers: [
     MicrosoftEntraID({
       clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
