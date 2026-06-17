@@ -89,12 +89,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    signIn({ user }) {
+    signIn({ user, profile }) {
       const allowed = allowedEmails();
-      const email = user.email?.toLowerCase() ?? "";
+      // Entra may surface the address as email, preferred_username, or upn
+      // depending on the account/tenant — check them all against the allow-list.
+      const p = profile as
+        | { email?: string; preferred_username?: string; upn?: string }
+        | undefined;
+      const candidates = [user.email, p?.email, p?.preferred_username, p?.upn]
+        .filter((e): e is string => Boolean(e))
+        .map((e) => e.toLowerCase());
       // Default-deny: an empty allow-list locks everyone out rather than
       // exposing client supplier data on a public URL.
-      return allowed.length > 0 && allowed.includes(email);
+      const permitted = allowed.length > 0 && candidates.some((c) => allowed.includes(c));
+      // TEMP: diagnose AccessDenied — which identity claims came back vs the list.
+      console.error("[auth] signIn — candidates:", candidates, "| allowed:", allowed, "| permitted:", permitted);
+      return permitted;
     },
     authorized({ auth }) {
       return !!auth?.user;
