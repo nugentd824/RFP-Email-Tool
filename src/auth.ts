@@ -52,12 +52,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // Surface the underlying cause of the generic "Configuration" error page
     // in the Vercel function logs (name + message + nested cause).
     error(error) {
-      const cause = (error as { cause?: unknown }).cause;
-      // TEMP: include the env probe (names only, never values) on every error
-      // so it always lines up with the failing request, warm starts included.
+      // TEMP: walk the cause/body chain so the underlying provider error
+      // (e.g. an AADSTS code from the token endpoint) is visible, plus the
+      // env probe. Names only for env, never values.
+      const safe = (v: unknown) => {
+        try {
+          return typeof v === "string" ? v : JSON.stringify(v);
+        } catch {
+          return String(v);
+        }
+      };
+      const describe = (e: unknown, depth = 0): string => {
+        if (e == null || depth > 5) return "";
+        const o = e as { name?: string; message?: string; cause?: unknown; body?: unknown; error?: unknown };
+        const head = e instanceof Error ? `${o.name}: ${o.message}` : safe(e);
+        const inner = describe(o.cause ?? o.body ?? o.error, depth + 1);
+        return inner ? `${head} <= ${inner}` : head;
+      };
       const authKeys = Object.keys(process.env).filter((k) => /^(AUTH_|NEXTAUTH_)/i.test(k));
       console.error(
-        "[auth] error:", error.name, "-", error.message, cause ?? "",
+        "[auth] error:", describe(error).slice(0, 1200),
         "| AUTH_SECRET present:", !!process.env.AUTH_SECRET,
         "| ISSUER:", JSON.stringify(process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER),
         "| CLIENT_ID len:", (process.env.AUTH_MICROSOFT_ENTRA_ID_ID ?? "").length,
